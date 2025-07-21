@@ -17,7 +17,7 @@ print("Opening Amazon... If you are not logged in, please log in manually in the
 driver.get("https://www.amazon.com/errors/login") # A page to check your login status
 
 # Keep the browser open for a bit so you can see the result or log in
-time.sleep(15) 
+time.sleep(300) 
 
 print("Script finished. Your session is now saved in the 'chrome_profile' folder.")
 driver.quit()
