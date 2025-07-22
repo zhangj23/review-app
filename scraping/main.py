@@ -17,6 +17,7 @@ class ReviewScraper():
         
         self._get_page_reviews(reviews)
         self.driver.find_element(By.CSS_SELECTOR, "a[data-hook='see-all-reviews-link-foot']").click()
+        product = self.driver.find_element(By.ID, "productTitle").text
         time.sleep(2)
         next_button = self.driver.find_element(By.CLASS_NAME, "a-last")
         while next_button:
@@ -31,6 +32,11 @@ class ReviewScraper():
         for review in reviews:
             print(review)
         self.driver.quit()
+        
+        return {
+            "reviews": reviews[:50],
+            "product": product
+        }
         
     def pass_captcha(self):
         time.sleep(0.1)
