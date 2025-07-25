@@ -1,0 +1,8 @@
+selenium==4.34.2
+undetected_chromedriver
+dotenv==0.9.9
+google-genai==1.26.0
+dotenv
+pydantic
+sentence_transformers==5.0.0
+scikit-learn==1.7.1

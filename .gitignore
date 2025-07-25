@@ -1,0 +1,11 @@
+# Environment variables - contains secrets!
+.env
+
+# Python virtual environment folder
+.venv/
+
+# Selenium browser session data
+chrome_profile/
+/app/__pycache__
+/app/llm/__pycache__
+*.pyc
