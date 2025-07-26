@@ -13,4 +13,4 @@ class EmbedCluster():
       
       cluster_assignments = kmeans.labels_
       
-      return cluster_assignments
+      return cluster_assignments, embeddings

@@ -2,22 +2,29 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import undetected_chromedriver  as uc
 import time
+import os
 
 class ReviewScraper():
     def __init__(self):
         options = uc.ChromeOptions()
-        options.add_argument(r'--user-data-dir=C:\Users\Justin\OneDrive\Documents\GitHub\review-app\scraping\chrome_profile') 
-        options.add_argument(r'--profile-directory=Default')
+        # Get the absolute path to the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        profile_path = os.path.join(script_dir, "chrome_profile")
+
+        # Use a dedicated, non-conflicting profile for scraping
+        options.add_argument(f'--user-data-dir={profile_path}') 
+        options.add_argument(r'--profile-directory=ScrapingProfile')
         self.driver = webdriver.Chrome(options=options)
     def get_reviews(self, url: str):
         reviews = []
         self.driver.get(url)
         # self.pass_captcha()
-        time.sleep(3)
+        time.sleep(5)
         
         self._get_page_reviews(reviews)
-        self.driver.find_element(By.CSS_SELECTOR, "a[data-hook='see-all-reviews-link-foot']").click()
         product = self.driver.find_element(By.ID, "productTitle").text
+        self.driver.find_element(By.CSS_SELECTOR, "a[data-hook='see-all-reviews-link-foot']").click()
+        
         time.sleep(2)
         next_button = self.driver.find_element(By.CLASS_NAME, "a-last")
         while next_button:
@@ -34,7 +41,7 @@ class ReviewScraper():
         self.driver.quit()
         
         return {
-            "reviews": reviews[:50],
+            "reviews": reviews,
             "product": product
         }
         

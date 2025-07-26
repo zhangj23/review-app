@@ -8,7 +8,7 @@ class ReviewAnalysisPipeline():
    def run_pipeline(self, url):
       reviews = self.review_scraper.get_reviews(url)
       print(reviews)
-      clusters = self.embed_cluster.cluster_reviews(reviews)
+      clusters = self.embed_cluster.cluster_reviews(reviews["reviews"])
       print(clusters)
       
 def main():
