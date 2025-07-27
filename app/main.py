@@ -57,15 +57,25 @@ class ReviewAnalysisPipeline():
 
       if positive_reviews:
          print("\n--- Clustering Positive Reviews ---")
-         positive_clusters, _ = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
+         positive_clusters, positive_cluster_num = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
          positive_clusters = positive_clusters.tolist()
       if negative_reviews:
          print("\n--- Clustering Negative Reviews ---")
-         negative_clusters, _ = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
+         negative_clusters, negative_cluster_num = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
          negative_clusters = negative_clusters.tolist()
       
       self.save_reviews_clusters(positive_reviews, positive_clusters, "postive_pairings.json")
       self.save_reviews_clusters(negative_reviews, negative_clusters, "negative_pairings.json")
+      
+      positive_map = [[] for _ in positive_cluster_num]
+      for i in range(len(positive_reviews)):
+         cluster_number = positive_clusters[i]
+         positive_map[cluster_number].append(positive_reviews[i])
+      negative_map = [[] for _ in negative_cluster_num]
+      for i in range(len(negative_reviews)):
+         cluster_number = negative_clusters[i]
+         negative_map[cluster_number].append(negative_reviews[i])
+         
       
    def save_reviews_clusters(self, reviews, clusters, filename):
       pairings = []
