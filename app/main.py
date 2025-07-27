@@ -18,36 +18,70 @@ class ReviewAnalysisPipeline():
          print("Error: data.json not found.")
       except json.JSONDecodeError:
          print("Error: Invalid JSON format in data.json.")
-         
+   
+   def get_sentiment_by_rating(self, star_rating: float):
+      """Classifies sentiment based on a product's star rating."""
+        
+      # Ensure star_rating is a number
+      if not isinstance(star_rating, (int, float)):
+          return "Neutral" # Default for missing ratings
+      if star_rating <= 3.0:
+          return "Negative"
+      elif star_rating >= 4.0:
+          return "Positive"
+      else: # This handles 3-star reviews
+          return "Neutral"
+      
    def run_pipeline(self, url):
-      pairings = []
-      # reviews = self.get_saved_reviews("reviews.json")
+      """Run pipeline that gets pros and cons of a product from a link"""
       reviews = self.review_scraper.get_reviews(url)["reviews"]
+      with open("keyboard_reviews.json", "w") as f:
+         json.dump(reviews, f, indent=4)
       positive_reviews = []
       negative_reviews = []
 
       for review in reviews:
-         score = self.sentiment_analyzer.polarity_scores(review)['compound']
-         if score >= 0.05:
-               positive_reviews.append(review)
-         elif score <= -0.05:
-               negative_reviews.append(review)
+         review_text = review["text"]
+         star_rating = review["rating"]
+         if not review_text or star_rating is None:
+               continue
+
+         sentiment = self.get_sentiment_by_rating(star_rating)
+         
+         if sentiment == "Positive":
+               positive_reviews.append(review_text)
+         elif sentiment == "Negative":
+               negative_reviews.append(review_text)
       
       print(f"Found {len(positive_reviews)} positive reviews and {len(negative_reviews)} negative reviews.")
       print(negative_reviews)
 
+      # Get positive clusters
       if positive_reviews:
          print("\n--- Clustering Positive Reviews ---")
-         positive_clusters, _ = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
+         positive_kmeans, positive_cluster_num, positive_embeddings = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
+         positive_clusters = positive_kmeans.labels_
          positive_clusters = positive_clusters.tolist()
+         
+      # Get negative clusters
       if negative_reviews:
          print("\n--- Clustering Negative Reviews ---")
-         negative_clusters, _ = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
+         negative_kmeans, negative_cluster_num, negative_embeddings = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
+         negative_clusters = negative_kmeans.labels_
          negative_clusters = negative_clusters.tolist()
       
       self.save_reviews_clusters(positive_reviews, positive_clusters, "postive_pairings.json")
       self.save_reviews_clusters(negative_reviews, negative_clusters, "negative_pairings.json")
       
+      positive_map = [[] for _ in positive_cluster_num]
+      for i in range(len(positive_reviews)):
+         cluster_number = positive_clusters[i]
+         positive_map[cluster_number].append(positive_reviews[i])
+      negative_map = [[] for _ in negative_cluster_num]
+      for i in range(len(negative_reviews)):
+         cluster_number = negative_clusters[i]
+         negative_map[cluster_number].append(negative_reviews[i])
+         
    def save_reviews_clusters(self, reviews, clusters, filename):
       pairings = []
       for i in range(len(reviews)):
