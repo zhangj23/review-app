@@ -33,6 +33,7 @@ class ReviewAnalysisPipeline():
           return "Neutral"
       
    def run_pipeline(self, url):
+      """Run pipeline that gets pros and cons of a product from a link"""
       reviews = self.review_scraper.get_reviews(url)["reviews"]
       with open("keyboard_reviews.json", "w") as f:
          json.dump(reviews, f, indent=4)
@@ -55,13 +56,18 @@ class ReviewAnalysisPipeline():
       print(f"Found {len(positive_reviews)} positive reviews and {len(negative_reviews)} negative reviews.")
       print(negative_reviews)
 
+      # Get positive clusters
       if positive_reviews:
          print("\n--- Clustering Positive Reviews ---")
-         positive_clusters, positive_cluster_num = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
+         positive_kmeans, positive_cluster_num, positive_embeddings = self.embed_cluster.cluster_reviews(positive_reviews, min(len(positive_reviews), 10))
+         positive_clusters = positive_kmeans.labels_
          positive_clusters = positive_clusters.tolist()
+         
+      # Get negative clusters
       if negative_reviews:
          print("\n--- Clustering Negative Reviews ---")
-         negative_clusters, negative_cluster_num = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
+         negative_kmeans, negative_cluster_num, negative_embeddings = self.embed_cluster.cluster_reviews(negative_reviews, min(len(negative_reviews), 10))
+         negative_clusters = negative_kmeans.labels_
          negative_clusters = negative_clusters.tolist()
       
       self.save_reviews_clusters(positive_reviews, positive_clusters, "postive_pairings.json")
@@ -76,7 +82,6 @@ class ReviewAnalysisPipeline():
          cluster_number = negative_clusters[i]
          negative_map[cluster_number].append(negative_reviews[i])
          
-      
    def save_reviews_clusters(self, reviews, clusters, filename):
       pairings = []
       for i in range(len(reviews)):
