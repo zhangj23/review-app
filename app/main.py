@@ -6,7 +6,7 @@ import json
 class ReviewAnalysisPipeline():
    def __init__(self):
       self.embed_cluster = EmbedCluster()
-      # self.review_scraper = ReviewScraper()
+      self.review_scraper = ReviewScraper()
       self.sentiment_analyzer = SentimentIntensityAnalyzer()
       
    def get_saved_reviews(self, filename):
@@ -21,8 +21,8 @@ class ReviewAnalysisPipeline():
          
    def run_pipeline(self, url):
       pairings = []
-      reviews = self.get_saved_reviews("reviews.json")
-      # reviews = self.review_scraper.get_reviews(url)["reviews"]
+      # reviews = self.get_saved_reviews("reviews.json")
+      reviews = self.review_scraper.get_reviews(url)["reviews"]
       positive_reviews = []
       negative_reviews = []
 

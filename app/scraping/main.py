@@ -1,63 +1,111 @@
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-import undetected_chromedriver  as uc
-import time
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import undetected_chromedriver as uc
 import os
+import time
 
 class ReviewScraper():
     def __init__(self):
         options = uc.ChromeOptions()
-        # Get the absolute path to the directory where this script is located
         script_dir = os.path.dirname(os.path.abspath(__file__))
         profile_path = os.path.join(script_dir, "chrome_profile")
 
-        # Use a dedicated, non-conflicting profile for scraping
         options.add_argument(f'--user-data-dir={profile_path}') 
         options.add_argument(r'--profile-directory=ScrapingProfile')
-        self.driver = webdriver.Chrome(options=options)
+        
+        self.driver = uc.Chrome(options=options)
+        
+        self.wait = WebDriverWait(self.driver, 10)
+
     def get_reviews(self, url: str):
         reviews = []
-        self.driver.get(url)
-        # self.pass_captcha()
-        time.sleep(5)
-        
-        self._get_page_reviews(reviews)
-        product = self.driver.find_element(By.ID, "productTitle").text
-        self.driver.find_element(By.CSS_SELECTOR, "a[data-hook='see-all-reviews-link-foot']").click()
-        
-        time.sleep(2)
-        next_button = self.driver.find_element(By.CLASS_NAME, "a-last")
-        while next_button:
-            self._get_page_reviews(reviews)
-            next_button.click()
-            time.sleep(2)
-            next_button = self.driver.find_element(By.CLASS_NAME, "a-last")
-            if 'a-disabled' in next_button.get_attribute('class').split():
-                self._get_page_reviews(reviews)
-                break
-        time.sleep(2)
-        for review in reviews:
-            print(review)
+        try:
+            self.driver.get(url)
+            
+            product_title_element = self.wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
+            product = product_title_element.text
+            print(f"Scraping reviews for: {product}")
+
+            # Wait for the "see all reviews" link and click it
+            see_all_reviews_link = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a[data-hook='see-all-reviews-link-foot']")))
+            see_all_reviews_link.click()
+
+            print("Navigating review pages...")
+            page_count = 1
+            while True:
+                try:
+                    print(f"Scraping page {page_count}...")
+                    self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-hook='review-star-rating']")))
+                    time.sleep(0.5)
+                    self._get_page_reviews(reviews)
+                    
+                    next_button = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.a-last a")))
+                    
+                    self.driver.execute_script("arguments[0].click();", next_button)
+                    
+                    page_count += 1
+
+                except TimeoutException:
+                    print("Reached the last page of reviews.")
+                    break
+
+            print(f"\nScraped a total of {len(reviews)} reviews.")
+            print(reviews)
+            return {
+                "reviews": reviews,
+                "product": product
+            }
+
+        except (TimeoutException, NoSuchElementException) as e:
+            print(f"A required element was not found on the page, aborting. Error: {e}")
+            return {"reviews": [], "product": "Unknown"}
+        finally:
+            self.close()
+
+    def _get_page_reviews(self, reviews_list: list):
+        """Helper function to extract all review text and ratings from the current page."""
+
+        # Find the parent review containers first
+        review_containers = self.driver.find_elements(By.CSS_SELECTOR, "[data-hook='review']")
+
+        for container in review_containers:
+            try:
+                review_text_element = container.find_element(By.CSS_SELECTOR, "span[data-hook='review-body'] span")
+                review_text = review_text_element.text
+                
+                rating_element = container.find_element(By.CSS_SELECTOR, "i[data-hook='review-star-rating'] span")
+                
+                # Use .get_attribute('textContent') to get the hidden text
+                rating_text = rating_element.get_attribute('textContent')
+
+                # Parse the string to get just the number
+                rating_value = float(rating_text.split(" ")[0])
+
+                # Append the structured data
+                if review_text: # Ensure review text is not empty
+                    reviews_list.append({
+                        "text": review_text,
+                        "rating": rating_value
+                    })
+            except Exception as e:
+                # This will skip any review that is missing a rating or text, preventing crashes
+                print(f"Skipping a review due to an error: {e}")
+
+    def close(self):
+        """Closes the WebDriver session."""
+        print("Closing the browser.")
         self.driver.quit()
-        
-        return {
-            "reviews": reviews,
-            "product": product
-        }
-        
-    def pass_captcha(self):
-        time.sleep(0.1)
-        self.driver.find_element(By.CLASS_NAME, "a-button-text").click()
-    def _get_page_reviews(self, reviews):
-        elements = self.driver.find_elements(By.CLASS_NAME, "review-text-content")
-        for element in elements:
-            reviews.append(element.text)
-        
+
 def main():
-    url = "https://www.amazon.com/Wireless-Keyboard-SQMD-Typewriter-Windows/dp/B0DNYK8M7B/ref=sr_1_1_sspa?dib=eyJ2IjoiMSJ9.ORTWL3d7znfuiIiBr8bDzc-CfnkGUE3fSDTF96Mimxra9cVw3lAuWUSBLMJnZmyJSPScvhiPUgH8ay8gYKXV5KQs-D0QgfcXzZ-ydzxqKBf0_TBTq91kEJiP4jBVVLQHtRQaBAVJN_WOTyrszOA-xUYrvqWPBoAR9Gmib8qyZlu3nqNAdBoHYrJLQ46fWhj5LfZqItfTx9LQov7nGyKvIxNpThEXSDUgsyhBd9iPV8ooncjFzJK0DfOYDS0xGaocGIAXQIu0uDtyhzUpQ7sihVIgvS5YgW4vMhhK7-4Vul0.LJSBKrAhRVG-8BJwhGgrAbt1Cg-imxHpm5Oe_GB6K4U&dib_tag=se&hvadid=693645020395&hvdev=c&hvexpln=67&hvlocphy=9004345&hvnetw=g&hvocijid=8191500413380644699--&hvqmt=e&hvrand=8191500413380644699&hvtargid=kwd-299418638870&hydadcr=8474_13653494&keywords=amazon%2Bkeyboard&mcid=b80ee91c22f5326291c51a3b7cb5f4f7&qid=1753048908&s=mobile-apps&sr=1-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1"
+    url = "https://www.amazon.com/dp/B0DNYK8M7B/"
+    
     scraper = ReviewScraper()
-    scraper.get_reviews(url)
+    scraped_data = scraper.get_reviews(url)
     
-    
+    if scraped_data and scraped_data["reviews"]:
+        print(f"\nFirst review scraped: '{scraped_data['reviews'][0][:100]}...'")
+
 if __name__ == "__main__":
     main()
