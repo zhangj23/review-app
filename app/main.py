@@ -18,20 +18,39 @@ class ReviewAnalysisPipeline():
          print("Error: data.json not found.")
       except json.JSONDecodeError:
          print("Error: Invalid JSON format in data.json.")
-         
+   
+   def get_sentiment_by_rating(self, star_rating: float):
+      """Classifies sentiment based on a product's star rating."""
+        
+      # Ensure star_rating is a number
+      if not isinstance(star_rating, (int, float)):
+          return "Neutral" # Default for missing ratings
+      if star_rating <= 3.0:
+          return "Negative"
+      elif star_rating >= 4.0:
+          return "Positive"
+      else: # This handles 3-star reviews
+          return "Neutral"
+      
    def run_pipeline(self, url):
-      pairings = []
-      # reviews = self.get_saved_reviews("reviews.json")
       reviews = self.review_scraper.get_reviews(url)["reviews"]
+      with open("keyboard_reviews.json", "w") as f:
+         json.dump(reviews, f, indent=4)
       positive_reviews = []
       negative_reviews = []
 
       for review in reviews:
-         score = self.sentiment_analyzer.polarity_scores(review)['compound']
-         if score >= 0.05:
-               positive_reviews.append(review)
-         elif score <= -0.05:
-               negative_reviews.append(review)
+         review_text = review["text"]
+         star_rating = review["rating"]
+         if not review_text or star_rating is None:
+               continue
+
+         sentiment = self.get_sentiment_by_rating(star_rating)
+         
+         if sentiment == "Positive":
+               positive_reviews.append(review_text)
+         elif sentiment == "Negative":
+               negative_reviews.append(review_text)
       
       print(f"Found {len(positive_reviews)} positive reviews and {len(negative_reviews)} negative reviews.")
       print(negative_reviews)
