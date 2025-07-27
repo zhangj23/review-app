@@ -6,3 +6,4 @@ dotenv
 pydantic
 sentence_transformers==5.0.0
 scikit-learn==1.7.1
+vaderSentiment==3.3.2

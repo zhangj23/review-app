@@ -5,12 +5,11 @@ class EmbedCluster():
    def __init__(self):
       self.model = SentenceTransformer('all-MiniLM-L6-v2')
       
-   def cluster_reviews(self, reviews):
+   def cluster_reviews(self, reviews, num_clusters):
       embeddings = self.model.encode(reviews)
-      num_clusters = 10
       kmeans = KMeans(n_clusters=num_clusters)
       kmeans.fit(embeddings)
       
       cluster_assignments = kmeans.labels_
       
-      return cluster_assignments
+      return cluster_assignments, embeddings

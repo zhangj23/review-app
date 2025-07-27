@@ -1,23 +1,30 @@
-import undetected_chromedriver as uc
-import time
+from selenium import webdriver
+import os
 
 # --- Setup the Chrome Options ---
-options = uc.ChromeOptions()
+options = webdriver.ChromeOptions()
 
-# Set the path to your user profile. This will create the folder if it doesn't exist.
-options.add_argument(r'--user-data-dir=C:\Users\Justin\OneDrive\Documents\GitHub\review-app\scraping\chrome_profile') 
+# Your Chrome version
 
-# Provide a profile name
-options.add_argument(r'--profile-directory=Default')
+# Get the absolute path to the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+profile_path = os.path.join(script_dir, "chrome_profile")
 
-# --- Launch the browser with the options ---
-driver = uc.Chrome(options=options)
+# Use a dedicated, non-conflicting profile for scraping
+options.add_argument(f'--user-data-dir={profile_path}')
+options.add_argument(f'--profile-directory=ScrapingProfile') # Changed from "Default"
 
-print("Opening Amazon... If you are not logged in, please log in manually in the browser window.")
-driver.get("https://www.amazon.com/errors/login") # A page to check your login status
+# --- Launch the browser ---
+print("Initializing Selenium driver...")
+driver = webdriver.Chrome(options=options)
+print("Driver initialized successfully.")
 
-# Keep the browser open for a bit so you can see the result or log in
-time.sleep(300) 
+print("Attempting to navigate to Amazon...")
+driver.get("https://www.amazon.com/ap/signin")
+print("Navigation command sent. Check the browser window.")
 
-print("Script finished. Your session is now saved in the 'chrome_profile' folder.")
+# The script will pause here until you press Enter in the terminal
+input("Browser is open. Press Enter in this terminal to close it...") 
+
+print("Script finished.")
 driver.quit()
