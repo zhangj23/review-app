@@ -53,19 +53,32 @@ class GeminiHandler():
             connotation = "negative issue (con)"
 
         prompt = (
-            f"These reviews all describe a common {connotation}. "
-            f"What is the single theme they are discussing? "
-            f"Respond with only a short, descriptive title (2-4 words) that reflects this theme.\n\n"
-            f"REVIEWS:\n{reviews_sample}"
-        )
-        
+                f"You are a product analyst summarizing customer feedback. The following reviews all discuss a common {connotation}. "
+                f"Your task is to identify the specific product feature or attribute being described.\n\n"
+                f"Summarize this feature into a concise, 2-4 word title. "
+                f"Be specific. For example, instead of a generic title like 'Good Design', use a specific one like 'Stylish Color Options' or 'Comfortable Typing Feel'.\n\n"
+                f"REVIEWS:\n{reviews_sample}"
+            )
+                
         try:
             response = self.gemini_model.generate_content(prompt)
             return response.text.strip()
         except Exception as e:
             print(f"Error generating topic: {e}")
             return "General Feedback"
-    
+    def generate_final_report(self, pros_list, cons_list):
+        final_prompt = (
+            "You are a product analyst summarizing customer feedback. Based on the following key topics, "
+            "write a final, clean summary report. Combine any redundant or very similar points. "
+            "Present the result as a simple list of 'Top Pros' and 'Top Cons'.\n\n"
+            f"Pros Topics: {pros_list}\n"
+            f"Cons Topics: {cons_list}"
+        )
+
+        # Make a simple, final call to the LLM
+        final_report = self.gemini_model.generate_content(final_prompt)
+        return final_report.text
+
     def generate_pros_cons(self, reviews: list[str], product: str):
         # 3. Define the System Instruction and User Prompt
         system_instruction = (

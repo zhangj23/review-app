@@ -81,6 +81,8 @@ class ReviewAnalysisPipeline():
         print("Pros:", final_pros)
         print("Cons:", final_cons)
         
+        print("\n--- FINAL REPORT ---")
+        print(self.gemini_handler.generate_final_report(final_pros, final_cons))
         # You can easily save the results to a CSV file
         df.to_csv("analyzed_reviews.csv", index=False)
         print("\nSaved full analysis to analyzed_reviews.csv")
