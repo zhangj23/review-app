@@ -2,13 +2,29 @@ from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import numpy as np
+
 class EmbedCluster():
    def __init__(self):
       self.model = SentenceTransformer('all-MiniLM-L6-v2')
       
    def _find_optimal_k(self, embeddings, max_k=15):
         """Finds the optimal number of clusters using the silhouette score."""
+        
+        # 1. Get the total number of reviews (samples)
+        n_samples = embeddings.shape[0]
+
+        # 2. Adjust max_k if you have too few reviews
+        # The number of clusters must be less than the number of samples.
+        if n_samples < max_k:
+            max_k = n_samples
+
+        # The cluster range must start at 2
+        if max_k < 2:
+            print("Not enough reviews to form clusters. Defaulting to 1 cluster.")
+            return 1
+
         silhouette_scores = []
+        # 3. Create a dynamic range that cannot exceed the number of samples
         cluster_range = range(2, max_k)
 
         for k in cluster_range:
@@ -18,15 +34,16 @@ class EmbedCluster():
             silhouette_scores.append(score)
         
         if not silhouette_scores:
-            return 5 # Return a default value if no scores were calculated
+            # This happens if you have 2 or 3 reviews, making cluster_range empty
+            return 2 # Default to 2 clusters if the range is too small
 
         # Return the k that corresponds to the highest silhouette score
-        return cluster_range[silhouette_scores.index(max(silhouette_scores))]
+        optimal_k = cluster_range[silhouette_scores.index(max(silhouette_scores))]
+        return optimal_k
      
    def cluster_reviews(self, reviews):
-      num_clusters = self._find_optimal_k(embeddings)
-      
       embeddings = self.model.encode(reviews)
+      num_clusters = self._find_optimal_k(embeddings)
       kmeans = KMeans(n_clusters=num_clusters,  random_state=42, n_init='auto')
       kmeans.fit(embeddings)
       

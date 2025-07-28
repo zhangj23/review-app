@@ -41,8 +41,31 @@ class GeminiHandler():
         )
         
         # 2. Create the model instance
-        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        self.gemini_model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        
+    def _get_cluster_topic(self, reviews_sample: list, sentiment_type: str):
+        """Uses Gemini to generate a short title for a cluster, with sentiment context."""
 
+        # Dynamically set the connotation based on the sentiment type
+        if sentiment_type == "pro":
+            connotation = "positive feature (pro)"
+        else:
+            connotation = "negative issue (con)"
+
+        prompt = (
+            f"These reviews all describe a common {connotation}. "
+            f"What is the single theme they are discussing? "
+            f"Respond with only a short, descriptive title (2-4 words) that reflects this theme.\n\n"
+            f"REVIEWS:\n{reviews_sample}"
+        )
+        
+        try:
+            response = self.gemini_model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            print(f"Error generating topic: {e}")
+            return "General Feedback"
+    
     def generate_pros_cons(self, reviews: list[str], product: str):
         # 3. Define the System Instruction and User Prompt
         system_instruction = (
@@ -58,7 +81,7 @@ class GeminiHandler():
         
         try:
             # 4. Call the API with the tool
-            response = self.model.generate_content(
+            response = self.gemini_model.generate_content(
                 [system_instruction, prompt],
                 tools=[self.analysis_tool] # Pass the tool to the API
             )
