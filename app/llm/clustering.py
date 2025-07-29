@@ -25,7 +25,7 @@ class EmbedCluster():
 
         silhouette_scores = []
         # 3. Create a dynamic range that cannot exceed the number of samples
-        cluster_range = range(2, max_k)
+        cluster_range = range(min(n_samples, 5), max_k)
 
         for k in cluster_range:
             kmeans = KMeans(n_clusters=k, random_state=42, n_init='auto')

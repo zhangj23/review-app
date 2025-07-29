@@ -53,13 +53,17 @@ class GeminiHandler():
             connotation = "negative issue (con)"
 
         prompt = (
-                f"You are a product analyst summarizing customer feedback. The following reviews all discuss a common {connotation}. "
-                f"Your task is to identify the specific product feature or attribute being described.\n\n"
-                f"Summarize this feature into a concise, 2-4 word title. "
-                f"Be specific. For example, instead of a generic title like 'Good Design', use a specific one like 'Stylish Color Options' or 'Comfortable Typing Feel'.\n\n"
-                f"REVIEWS:\n{reviews_sample}"
-            )
-                
+            f"You are a product analyst identifying specific feedback themes from customer reviews. "
+            f"The following reviews all discuss a common {connotation}.\n\n"
+            f"Your task is to provide a concise 2-4 word title for the main topic. "
+            f"Focus on specific aspects of the product, such as:\n"
+            f"- Aesthetics (color, style, retro look)\n"
+            f"- Typing Experience (key feel, comfort, shape, sound)\n"
+            f"- Performance & Reliability (connectivity, lag, if it stopped working)\n"
+            f"- Features (battery life, on/off switch, wireless USB)\n\n"
+            f"The title must be a specific feature, not a generic feeling. For example, instead of 'Good Functionality', use 'Easy Wireless Setup'.\n\n"
+            f"REVIEWS:\n{reviews_sample}"
+        )
         try:
             response = self.gemini_model.generate_content(prompt)
             return response.text.strip()
