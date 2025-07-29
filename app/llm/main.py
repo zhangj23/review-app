@@ -41,7 +41,47 @@ class GeminiHandler():
         )
         
         # 2. Create the model instance
-        self.model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        self.gemini_model = genai.GenerativeModel("gemini-1.5-flash-latest")
+        
+    def _get_cluster_topic(self, reviews_sample: list, sentiment_type: str):
+        """Uses Gemini to generate a short title for a cluster, with sentiment context."""
+
+        # Dynamically set the connotation based on the sentiment type
+        if sentiment_type == "pro":
+            connotation = "positive feature (pro)"
+        else:
+            connotation = "negative issue (con)"
+
+        prompt = (
+            f"You are a product analyst identifying specific feedback themes from customer reviews. "
+            f"The following reviews all discuss a common {connotation}.\n\n"
+            f"Your task is to provide a concise 2-4 word title for the main topic. "
+            f"Focus on specific aspects of the product, such as:\n"
+            f"- Aesthetics (color, style, retro look)\n"
+            f"- Typing Experience (key feel, comfort, shape, sound)\n"
+            f"- Performance & Reliability (connectivity, lag, if it stopped working)\n"
+            f"- Features (battery life, on/off switch, wireless USB)\n\n"
+            f"The title must be a specific feature, not a generic feeling. For example, instead of 'Good Functionality', use 'Easy Wireless Setup'.\n\n"
+            f"REVIEWS:\n{reviews_sample}"
+        )
+        try:
+            response = self.gemini_model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            print(f"Error generating topic: {e}")
+            return "General Feedback"
+    def generate_final_report(self, pros_list, cons_list):
+        final_prompt = (
+            "You are a product analyst summarizing customer feedback. Based on the following key topics, "
+            "write a final, clean summary report. Combine any redundant or very similar points. "
+            "Present the result as a simple list of 'Top Pros' and 'Top Cons'.\n\n"
+            f"Pros Topics: {pros_list}\n"
+            f"Cons Topics: {cons_list}"
+        )
+
+        # Make a simple, final call to the LLM
+        final_report = self.gemini_model.generate_content(final_prompt)
+        return final_report.text
 
     def generate_pros_cons(self, reviews: list[str], product: str):
         # 3. Define the System Instruction and User Prompt
@@ -58,7 +98,7 @@ class GeminiHandler():
         
         try:
             # 4. Call the API with the tool
-            response = self.model.generate_content(
+            response = self.gemini_model.generate_content(
                 [system_instruction, prompt],
                 tools=[self.analysis_tool] # Pass the tool to the API
             )
